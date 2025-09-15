@@ -77,10 +77,15 @@ public class Product_Service {
         }
         return new ResponseEntity<>("Faild to update product", HttpStatus.BAD_REQUEST);
     }
+
     //delete a product by id
     public ResponseEntity<String> deleteProduct(UUID productId) {
         try {
-            if(productRepo.existsById(productId)){
+            Optional<Product> existingProduct=productRepo.findById(productId);
+            if(existingProduct.isPresent()){
+                if(!existingProduct.get().getProductImage().isEmpty()){
+                    file_store_service.deleteFile(existingProduct.get().getProductImage());
+                }
                 productRepo.deleteById(productId);
                 return new ResponseEntity<>("succsussfuly delete the product", HttpStatus.OK);
             }
@@ -152,17 +157,20 @@ public class Product_Service {
     //update image with image file
     public ResponseEntity<String> updateProductWithImage(UUID id, Product product, MultipartFile imageFile) {
         try{
-            if(!productRepo.existsById(id)){
+            Optional<Product> existingProduct=productRepo.findById(id);
+            if(existingProduct.isEmpty()){
                 return ResponseEntity.notFound().build();
             }
             if(product == null){
                 return ResponseEntity.badRequest().build();
             }
+
             if(imageFile.isEmpty()){
                 productRepo.save(product);
                 return  ResponseEntity.ok("product updated succsussfuly");
             }
             String imageUrl=file_store_service.uploadFile(imageFile);
+            file_store_service.deleteFile(existingProduct.get().getProductImage());
             product.setProductImage(imageUrl);
             product.setProductImageType(imageFile.getContentType());
             product.setProductImageName(imageFile.getOriginalFilename());

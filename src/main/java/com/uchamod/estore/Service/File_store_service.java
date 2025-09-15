@@ -6,8 +6,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -52,9 +54,9 @@ public class File_store_service {
     }
    //get public url
     private String getPublicUrl(String key) {
-        return String.format("https://%s.s3.amazonaws.com/%s",
-                bucketName,s3Client.serviceClientConfiguration().region().id(), key);
-    }
+        return String.format("https://%s.s3.ap-south-1.amazonaws.com/%s",
+                bucketName,key);
+    }//https://productsimagedata.s3.amazonaws.com/ap-south-1
     //generate unique file name
     private String generateUniqueFileName(String originalFilename) {
         String extension = "";
@@ -79,11 +81,43 @@ public class File_store_service {
             throw new IOException("Invalid file type. Only image files are allowed.");
         }
     }
+    //validate image type
     private boolean isValidImageType(String contentType) {
         return contentType.equals("image/jpeg") ||
                 contentType.equals("image/jpg") ||
                 contentType.equals("image/png") ||
                 contentType.equals("image/gif") ||
                 contentType.equals("image/webp");
+    }
+    //delete image file
+    public Boolean deleteFile(String imageFile){
+        try{
+           String key=extractKeyFromUrl(imageFile);
+           if(key == null){
+               return false;
+           }
+            DeleteObjectRequest deleteObjectRequest=DeleteObjectRequest.builder().
+                    bucket(bucketName).
+                    key(key).
+                    build();
+            s3Client.deleteObject(deleteObjectRequest);
+            return true;
+        }catch (S3Exception e){
+            System.err.println("Failed to delete file from S3: " + e.getMessage());
+            return false;
+        }
+    }
+    //extract image key from full url
+//https://productsimagedata.s3.ap-south-1.amazonaws.com/ -54 products/e1c3722b-8a58-4360-90d8-614dacb99b31.jpeg
+    private String extractKeyFromUrl(String url) {
+        if (url == null) {
+            return null;
+        }
+        try{
+           return url.substring(54);
+        }catch (Exception e){
+            System.err.println("Error extracting key from URL: " + e.getMessage());
+            return null;
+        }
     }
 }
