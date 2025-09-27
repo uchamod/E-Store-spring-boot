@@ -1,13 +1,21 @@
 package com.example.cart.Feign;
 
+import com.example.cart.DTO.CountUpdater;
+import com.example.cart.Model.ProductWrapper;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.UUID;
 
 @FeignClient("PRODUCT-SERVICE")
 public interface  Feign_Client {
     @PostMapping("/api/products/getTotal/{productIds}")
-    public ResponseEntity<Double> getTotalAmount(@PathVariable UUID productIds);
+    ResponseEntity<Double> getTotalAmount(@PathVariable UUID productIds);
+
+    @GetMapping("/api/products/getProductById/{productId}")
+    ResponseEntity<ProductWrapper> getProductById(@PathVariable UUID productId);
+
+    @PutMapping("/api/products/updateAvailableCount")
+    void updateAvailableCount(@RequestBody CountUpdater countUpdater);
 }
