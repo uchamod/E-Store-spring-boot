@@ -18,4 +18,9 @@ public interface Product_Repo extends JpaRepository<Product, UUID> {
           "LOWER(p.productCategory) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
           "LOWER(p.productBrand) LIKE LOWER(CONCAT('%', :keyword, '%'))")
   List<Product> searchProduct(String keyword);
+
+  List<Product> findProductBySellerId(UUID sellerId);
+
+  @Query("SELECT p.productPrice FROM Product p WHERE p.productId = :productId")
+  Double findProductPriceByProductId(UUID productId);
 }

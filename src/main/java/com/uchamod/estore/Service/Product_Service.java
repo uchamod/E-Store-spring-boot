@@ -1,6 +1,7 @@
 package com.uchamod.estore.Service;
 
 
+import com.uchamod.estore.Model.CountUpdater;
 import com.uchamod.estore.Model.Product;
 import com.uchamod.estore.Repo.Product_Repo;
 import lombok.RequiredArgsConstructor;
@@ -9,10 +10,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+
+
 @RequiredArgsConstructor
 @Service
 public class Product_Service {
@@ -51,10 +54,13 @@ public class Product_Service {
         return new ResponseEntity<>(new Product(), HttpStatus.BAD_REQUEST);
     }
     //add new products(without images)
-    public ResponseEntity<String> addProduct(List<Product> products) {
+    public ResponseEntity<String> addProduct(List<Product> products,UUID sellerId) {
         try{
             if(products.isEmpty()){
                 return ResponseEntity.badRequest().build();
+            }
+            for(Product product : products){
+                product.setSellerId(sellerId);
             }
             productRepo.saveAll(products);
             return new ResponseEntity<>("succsussfuly stored the data", HttpStatus.CREATED);
@@ -79,13 +85,18 @@ public class Product_Service {
     }
 
     //delete a product by id
-    public ResponseEntity<String> deleteProduct(UUID productId) {
+    public ResponseEntity<String> deleteProduct(UUID productId,UUID sellerId) {
         try {
             Optional<Product> existingProduct=productRepo.findById(productId);
             if(existingProduct.isPresent()){
+                if(!existingProduct.get().getSellerId().equals(sellerId)){
+                    System.out.println("cannot delete others content");
+                    return ResponseEntity.badRequest().build();
+                }
                 if(!existingProduct.get().getProductImage().isEmpty()){
                     file_store_service.deleteFile(existingProduct.get().getProductImage());
                 }
+
                 productRepo.deleteById(productId);
                 return new ResponseEntity<>("succsussfuly delete the product", HttpStatus.OK);
             }
@@ -167,7 +178,7 @@ public class Product_Service {
 
             if(imageFile.isEmpty()){
                 productRepo.save(product);
-                return  ResponseEntity.ok("product updated succsussfuly");
+                return  ResponseEntity.ok("product updated successfully");
             }
             String imageUrl=file_store_service.uploadFile(imageFile);
             file_store_service.deleteFile(existingProduct.get().getProductImage());
@@ -175,7 +186,7 @@ public class Product_Service {
             product.setProductImageType(imageFile.getContentType());
             product.setProductImageName(imageFile.getOriginalFilename());
             productRepo.save(product);
-            return  ResponseEntity.ok("product updated succsussfuly with image");
+            return  ResponseEntity.ok("product updated successfully with image");
 
         }catch (Exception e){
             System.err.println("Error updating product: " + e.getMessage());
@@ -201,5 +212,53 @@ public class Product_Service {
             e.fillInStackTrace();
         }
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+    }
+
+    public ResponseEntity<List<Product>> getProductsBySellerId(UUID sellerId) {
+        try{
+              if(sellerId == null){
+                  System.out.println("no seller id provided");
+                  return ResponseEntity.badRequest().build();
+              }
+            List<Product> products=  productRepo.findProductBySellerId(sellerId);
+            if(products.isEmpty()){
+                System.out.println("no product related to sellerId :"+sellerId);
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(products);
+
+        }catch (Exception e){
+            System.out.println("Internal server error"+e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+   //get total amount
+    public ResponseEntity<Double> getTotalAmount(UUID productIds) {
+        try{
+            if(productIds== null){
+                return ResponseEntity.badRequest().build();
+            }
+            Double price=productRepo.findProductPriceByProductId(productIds);
+            return ResponseEntity.ok(price);
+        }catch (Exception e){
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+//update current product count of a product
+    public void updateAvailableCount(CountUpdater countUpdater) {
+        try{
+
+              Product product=  productRepo.findById(countUpdater.getProductId()).get();
+              if(countUpdater.getIsIncrease()){
+                  product.setProductCount(product.getProductCount()+countUpdater.getProductCount());
+              }else {
+                  product.setProductCount(product.getProductCount()-countUpdater.getProductCount());
+              }
+              productRepo.save(product);
+                System.out.println("update product count");
+
+        }catch (Exception e){
+            System.out.println("item count is not updated"+e.getMessage());
+        }
     }
 }

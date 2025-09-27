@@ -1,10 +1,11 @@
 package com.uchamod.estore.Controller;
 
 
+import com.uchamod.estore.Model.CountUpdater;
 import com.uchamod.estore.Model.Product;
 import com.uchamod.estore.Service.Product_Service;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,7 +21,7 @@ public class Product_Controller {
    private final Product_Service productService;
 
    //get all products
-    @GetMapping("/getAllProducts")
+   @GetMapping("/getAllProducts")
    public ResponseEntity<List<Product>> getAllProducts(){
        return productService.getAllProducts();
    }
@@ -33,8 +34,8 @@ public class Product_Controller {
 
     //add products
     @PostMapping ("/addProduct")
-    public ResponseEntity<String> addProduct(@RequestBody List<Product> products){
-       return productService.addProduct(products);
+    public ResponseEntity<String> addProduct(@RequestBody List<Product> products,@RequestHeader("X-User-Id") String sellerId){
+       return productService.addProduct(products,UUID.fromString(sellerId));
     }
 
     //update product
@@ -44,8 +45,8 @@ public class Product_Controller {
     }
     //delete product
     @DeleteMapping ("/deleteProduct/{productId}")
-    public ResponseEntity<String> deleteProduct(@PathVariable UUID productId){
-      return   productService.deleteProduct(productId);
+    public ResponseEntity<String> deleteProduct(@PathVariable UUID productId,@RequestHeader("X-User-Id") String sellerId){
+      return   productService.deleteProduct(productId,UUID.fromString(sellerId));
     }
     //get product by category
     @GetMapping("/getProductByCategory/{category}")
@@ -89,4 +90,17 @@ public class Product_Controller {
         return productService.searchProduct(keyword);
     }
 
+    @GetMapping("/getProductsBySellerId")
+    public ResponseEntity<List<Product>> getProductsBySellerId(@RequestHeader("X-User-Id") String sellerId ){
+        return productService.getProductsBySellerId(UUID.fromString(sellerId));
+    }
+    @PostMapping("/getTotal/{productIds}")
+    public ResponseEntity<Double> getTotalAmount(@PathVariable UUID productIds){
+            return productService.getTotalAmount(productIds);
+    }
+
+    @PutMapping("/updateAvailableCount")
+    public void updateAvailableCount(@RequestBody CountUpdater countUpdater){
+        productService.updateAvailableCount(countUpdater);
+    }
 }

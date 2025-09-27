@@ -19,8 +19,9 @@ public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID productId;
+    private UUID sellerId;
     private String productName;
-    private Integer productPrice;
+    private Double productPrice;
     private Integer productCount;
     private Boolean isAvailable;
     private String productBrand;
