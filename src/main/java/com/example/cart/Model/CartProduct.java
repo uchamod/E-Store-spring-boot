@@ -15,11 +15,9 @@ import java.util.UUID;
 @NoArgsConstructor
 public class CartProduct {
 
-
-
     private UUID productId;
+    private UUID sellerId;
     private Integer productCount;
     private Boolean isCheckout;
-
 
 }

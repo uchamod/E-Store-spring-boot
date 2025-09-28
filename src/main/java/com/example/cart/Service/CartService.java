@@ -1,6 +1,7 @@
 package com.example.cart.Service;
 
 import com.example.cart.DTO.CountUpdater;
+import com.example.cart.DTO.ProductData;
 import com.example.cart.Feign.Feign_Client;
 import com.example.cart.Model.Cart;
 import com.example.cart.Model.CartProduct;
@@ -29,26 +30,29 @@ public class CartService {
                 System.out.println("Empty Credentials");
                 return ResponseEntity.badRequest().build();
             }
-            CartProduct product=new CartProduct(productId,1,false);
+
+
 
             List<CartProduct> cartProduct=new ArrayList<>();
-            cartProduct.add(product);
+
             //get product price
-            ResponseEntity<Double> total=  feignClient.getTotalAmount(productId);
+            ResponseEntity<ProductData> productdata=  feignClient.getTotalAmount(productId);
+            CartProduct product=new CartProduct(productId,productdata.getBody().getSellerId(),1,false);
+            cartProduct.add(product);
             Cart cart=new Cart();
             Cart existingCart= cartRepo.findCartByCustomerId(userId);
             feignClient.updateAvailableCount(new CountUpdater(productId,1,false));
             if(existingCart == null){
                 cart.setCustomerId(userId);
                 cart.setCartProductList(cartProduct);
-                cart.setTotalAmount(total.getBody());
+                cart.setTotalAmount(productdata.getBody().getProductPrice());
                 cartRepo.save(cart);
                 return ResponseEntity.ok("product is add to cart successfully");
             }
 
             existingCart.getCartProductList().add(product);
             //update cart total
-            existingCart.setTotalAmount(existingCart.getTotalAmount()+total.getBody());
+            existingCart.setTotalAmount(existingCart.getTotalAmount()+productdata.getBody().getProductPrice());
 
             cartRepo.save(existingCart);
             return ResponseEntity.ok("product is add to cart successfully");
@@ -60,20 +64,20 @@ public class CartService {
    //update cart item(increse item count)
     public ResponseEntity<List<CartProduct>> updateCartItem(UUID uuid, UUID productId,Integer count) {
         try{
-            if(uuid == null | productId == null){
+            if(uuid == null || productId == null){
                 return ResponseEntity.badRequest().build();
             }
 
             Cart cart= cartRepo.findCartByCustomerId(uuid);
-            if(cart == null | cart.getCartProductList().isEmpty()){
+            if(cart == null || cart.getCartProductList().isEmpty()){
                 return ResponseEntity.notFound().build();
             }
-            ResponseEntity<Double> total=  feignClient.getTotalAmount(productId);
+            ResponseEntity<ProductData> total=  feignClient.getTotalAmount(productId);
 
             for(CartProduct cartProduct : cart.getCartProductList()){
                 if(cartProduct.getProductId().equals(productId)){
                     Integer existingCount=cartProduct.getProductCount();
-                    Double finalAmount= (cart.getTotalAmount()-existingCount*total.getBody())+count*total.getBody();
+                    Double finalAmount= (cart.getTotalAmount()-existingCount*total.getBody().getProductPrice())+count*total.getBody().getProductPrice();
                     cart.setTotalAmount(finalAmount);
                     Integer finalCount=existingCount-count;
                     feignClient.updateAvailableCount(new CountUpdater(productId,Math.abs(finalCount),existingCount > count));
@@ -94,18 +98,18 @@ public class CartService {
 //delete cart item
     public ResponseEntity<String> deleteCartItem(UUID uuid, UUID productId) {
         try{
-            if(uuid == null | productId == null){
+            if(uuid == null || productId == null){
                 return ResponseEntity.badRequest().build();
             }
            Cart cart= cartRepo.findCartByCustomerId(uuid);
-            if(cart == null | cart.getCartProductList().isEmpty()){
+            if(cart == null || cart.getCartProductList().isEmpty()){
                 return ResponseEntity.notFound().build();
             }
-            ResponseEntity<Double> total=  feignClient.getTotalAmount(productId);
+            ResponseEntity<ProductData> total=  feignClient.getTotalAmount(productId);
 
             CartProduct cartProduct= cart.getCartProductList().remove(productId.compareTo(productId));
             feignClient.updateAvailableCount(new CountUpdater(productId,cartProduct.getProductCount(),true));
-              cart.setTotalAmount(cart.getTotalAmount()-(total.getBody()*cartProduct.getProductCount()));
+              cart.setTotalAmount(cart.getTotalAmount()-(total.getBody().getProductPrice()*cartProduct.getProductCount()));
             cartRepo.save(cart);
 
             return ResponseEntity.ok("product is deleted successfully");
@@ -140,11 +144,11 @@ public class CartService {
 //check out the cart
     public ResponseEntity<String> toggleCheckOut(UUID uuid, List<UUID> productIds) {
        try{
-           if(uuid == null | productIds.isEmpty()){
+           if(uuid == null || productIds.isEmpty()){
                return ResponseEntity.badRequest().build();
            }
            Cart cart=cartRepo.findCartByCustomerId(uuid);
-           if(cart == null | cart.getCartProductList().isEmpty()){
+           if(cart == null || cart.getCartProductList().isEmpty()){
                return ResponseEntity.notFound().build();
            }
            cart.getCartProductList().forEach(((p)->p.setIsCheckout(true)));
@@ -161,7 +165,7 @@ public class CartService {
                return ResponseEntity.badRequest().build();
            }
            Cart cart=cartRepo.findCartByCustomerId(uuid);
-           if(cart == null | cart.getCartProductList().isEmpty()){
+           if(cart == null || cart.getCartProductList().isEmpty()){
                return ResponseEntity.ok(0.0);
            }
 
