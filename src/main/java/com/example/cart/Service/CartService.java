@@ -9,6 +9,8 @@ import com.example.cart.Model.ProductResponse;
 import com.example.cart.Model.ProductWrapper;
 import com.example.cart.Repo.CartRepo;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -98,7 +100,7 @@ public class CartService {
 //delete cart item
     public ResponseEntity<String> deleteCartItem(UUID uuid, UUID productId) {
         try{
-            if(uuid == null || productId == null){
+            if(uuid == null  || productId == null){
                 return ResponseEntity.badRequest().build();
             }
            Cart cart= cartRepo.findCartByCustomerId(uuid);
@@ -173,5 +175,20 @@ public class CartService {
        }catch (Exception e){
            return ResponseEntity.internalServerError().build();
        }
+    }
+//remove user checkout cart
+    public ResponseEntity<String> checkoutFromCart(UUID userId) {
+        try{
+            if(userId==null){
+                return ResponseEntity.badRequest().build();
+            }
+               Cart cart= cartRepo.deleteByCustomerId(userId);
+            if(cart.getCartProductList().isEmpty()){
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("user product list is empty");
+            }
+            return ResponseEntity.status(HttpStatus.OK).body("user product list is removed succsussfuly");
+        }catch (Exception e){
+            return ResponseEntity.internalServerError().build();
+        }
     }
 }

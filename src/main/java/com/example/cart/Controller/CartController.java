@@ -49,5 +49,9 @@ public class CartController {
     public ResponseEntity<Double> getTotal(@RequestHeader("X-User-Id") String userId){
         return cartService.getTotal(UUID.fromString(userId));
    }
+    @DeleteMapping("/api/cart/checkoutFromCart/{userId}")
+    ResponseEntity<String> checkoutFromCart(@PathVariable UUID userId){
+        return cartService.checkoutFromCart(userId);
+    }
 
 }
