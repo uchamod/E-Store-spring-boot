@@ -1,5 +1,6 @@
 package com.uchamod.estore.Repo;
 
+import com.uchamod.estore.DTO.ProductData;
 import com.uchamod.estore.Model.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -21,6 +22,6 @@ public interface Product_Repo extends JpaRepository<Product, UUID> {
 
   List<Product> findProductBySellerId(UUID sellerId);
 
-  @Query("SELECT p.productPrice FROM Product p WHERE p.productId = :productId")
-  Double findProductPriceByProductId(UUID productId);
+  @Query("SELECT p.productPrice,p.sellerId FROM Product p WHERE p.productId = :productId")
+  ProductData findProductPriceByProductId(UUID productId);
 }

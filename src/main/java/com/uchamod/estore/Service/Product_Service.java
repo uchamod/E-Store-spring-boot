@@ -1,6 +1,7 @@
 package com.uchamod.estore.Service;
 
 
+import com.uchamod.estore.DTO.ProductData;
 import com.uchamod.estore.Model.CountUpdater;
 import com.uchamod.estore.Model.Product;
 import com.uchamod.estore.Repo.Product_Repo;
@@ -233,13 +234,13 @@ public class Product_Service {
         }
     }
    //get total amount
-    public ResponseEntity<Double> getTotalAmount(UUID productIds) {
+    public ResponseEntity<ProductData> getTotalAmount(UUID productIds) {
         try{
             if(productIds== null){
                 return ResponseEntity.badRequest().build();
             }
-            Double price=productRepo.findProductPriceByProductId(productIds);
-            return ResponseEntity.ok(price);
+            ProductData productData=productRepo.findProductPriceByProductId(productIds);
+            return ResponseEntity.ok(productData);
         }catch (Exception e){
             return ResponseEntity.internalServerError().build();
         }

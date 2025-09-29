@@ -1,6 +1,7 @@
 package com.uchamod.estore.Controller;
 
 
+import com.uchamod.estore.DTO.ProductData;
 import com.uchamod.estore.Model.CountUpdater;
 import com.uchamod.estore.Model.Product;
 import com.uchamod.estore.Service.Product_Service;
@@ -95,7 +96,7 @@ public class Product_Controller {
         return productService.getProductsBySellerId(UUID.fromString(sellerId));
     }
     @PostMapping("/getTotal/{productIds}")
-    public ResponseEntity<Double> getTotalAmount(@PathVariable UUID productIds){
+    public ResponseEntity<ProductData> getTotalAmount(@PathVariable UUID productIds){
             return productService.getTotalAmount(productIds);
     }
 
