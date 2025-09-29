@@ -37,8 +37,8 @@ public class Controller {
                                                              @RequestHeader("X-User-Role") String role){
         return orderService.getOrdersByCustomerId(UUID.fromString(sellerId),role);
     }
-    @PutMapping("/purcheForOrder/{orderId}")
-    public ResponseEntity<String> purcheForOrder(@PathVariable UUID orderId){
-        return orderService.purcheForOrder(orderId);
+    @PutMapping("/purcheForOrder/{orderId}/status/{status}")
+    public ResponseEntity<String> purcheForOrder(@PathVariable UUID orderId,@PathVariable String status){
+        return orderService.purcheForOrder(orderId,status);
     }
 }

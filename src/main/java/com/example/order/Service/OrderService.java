@@ -1,12 +1,15 @@
 package com.example.order.Service;
 
+import ch.qos.logback.core.status.Status;
 import com.example.order.DTO.SellerDTO;
+
+import com.example.order.Feign.OrderFeignClient;
 import com.example.order.Model.Order;
 import com.example.order.Repostory.OrderRepo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 
-import java.util.ArrayList;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -16,7 +19,7 @@ import java.util.UUID;
 public class OrderService {
 
     private final OrderRepo orderRepo;
-
+    private final OrderFeignClient orderFeignClient;
     //place new order
     public ResponseEntity<Order> placeOrder(Order order) {
         try{
@@ -35,7 +38,7 @@ public class OrderService {
             return ResponseEntity.internalServerError().build();
         }
     }
-//get all orders (Admin)
+    //get all orders (Admin)
     public ResponseEntity<List<Order>> getAllOrders() {
         try{
             List<Order> orders=  orderRepo.findAll();
@@ -64,10 +67,10 @@ public class OrderService {
             return ResponseEntity.internalServerError().build();
         }
     }
-//get orders by customer id
+    //get orders by customer id
     public ResponseEntity<List<Order>> getOrdersByCustomerId(UUID uuid, String role) {
         try{
-            if(uuid == null){
+            if(uuid == null || !role.equals("CUSTOMER")){
                 return ResponseEntity.badRequest().build();
             }
            List<Order> orders= orderRepo.findOrdersByCustomerId(uuid);
@@ -81,18 +84,35 @@ public class OrderService {
         }
     }
 //update order state to paid
-    public ResponseEntity<String> purcheForOrder(UUID orderId) {
+    public ResponseEntity<String> purcheForOrder(UUID orderId,String status) {
         try{
-            if(orderId == null){
+            if(orderId == null || status.isEmpty()){
                 return ResponseEntity.badRequest().build();
             }
            Optional<Order> order= orderRepo.findById(orderId);
             if(order.isEmpty()){
                 return ResponseEntity.notFound().build();
             }
-            order.get().setOrderStatus("PAID");
+            order.get().setOrderStatus(status);
+            //when paid clear from cart
+            if(status.equals("PAID")){
+                ResponseEntity<String> result= orderFeignClient.checkoutFromCart(order.get().getCustomerId());
+                if(result.getStatusCode().isError()){
+                    return ResponseEntity.internalServerError().build();
+                }
+                System.out.println(result.getBody());
+            }
             orderRepo.save(order.get());
-            return ResponseEntity.ok("status update successfully");
+
+
+
+
+              /*
+
+               seller acknowledgement
+
+               */
+            return ResponseEntity.ok("status updated "+status);
         }catch (Exception e){
             System.out.println("cannot get orders by seller id");
             return ResponseEntity.internalServerError().build();
