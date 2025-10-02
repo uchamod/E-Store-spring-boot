@@ -95,7 +95,7 @@ public class Product_Controller {
     public ResponseEntity<List<Product>> getProductsBySellerId(@RequestHeader("X-User-Id") String sellerId ){
         return productService.getProductsBySellerId(UUID.fromString(sellerId));
     }
-    @PostMapping("/getTotal/{productIds}")
+    @GetMapping("/getTotal/{productIds}")
     public ResponseEntity<ProductData> getTotalAmount(@PathVariable UUID productIds){
             return productService.getTotalAmount(productIds);
     }

@@ -242,6 +242,7 @@ public class Product_Service {
             ProductData productData=productRepo.findProductPriceByProductId(productIds);
             return ResponseEntity.ok(productData);
         }catch (Exception e){
+            System.out.println("exeption from product service"+e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
     }

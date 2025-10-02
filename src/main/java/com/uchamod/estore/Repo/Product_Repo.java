@@ -22,6 +22,7 @@ public interface Product_Repo extends JpaRepository<Product, UUID> {
 
   List<Product> findProductBySellerId(UUID sellerId);
 
-  @Query("SELECT p.productPrice,p.sellerId FROM Product p WHERE p.productId = :productId")
+  @Query("SELECT new com.uchamod.estore.DTO.ProductData(p.productPrice, p.sellerId) " +
+          "FROM Product p WHERE p.productId = :productId")
   ProductData findProductPriceByProductId(UUID productId);
 }
