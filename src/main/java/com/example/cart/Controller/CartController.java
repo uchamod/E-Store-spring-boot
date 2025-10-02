@@ -23,6 +23,7 @@ public class CartController {
     public ResponseEntity<ProductResponse> getProductFromCart(@RequestHeader("X-User-Id") String userId){
         return cartService.getProductFromCart(UUID.fromString(userId));
     }
+
     @PostMapping("/addToCart/{productId}")
     public ResponseEntity<String> addToCart(@RequestHeader("X-User-Id") String userId, @PathVariable UUID productId){
         return cartService.addToCart(UUID.fromString(userId),productId);

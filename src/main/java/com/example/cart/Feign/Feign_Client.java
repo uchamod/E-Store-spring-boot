@@ -11,7 +11,7 @@ import java.util.UUID;
 
 @FeignClient("PRODUCT-SERVICE")
 public interface  Feign_Client {
-    @PostMapping("/api/products/getTotal/{productIds}")
+    @GetMapping("/api/products/getTotal/{productIds}")
     ResponseEntity<ProductData> getTotalAmount(@PathVariable UUID productIds);
 
     @GetMapping("/api/products/getProductById/{productId}")

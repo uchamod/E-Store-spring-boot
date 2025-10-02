@@ -33,8 +33,6 @@ public class CartService {
                 return ResponseEntity.badRequest().build();
             }
 
-
-
             List<CartProduct> cartProduct=new ArrayList<>();
 
             //get product price
