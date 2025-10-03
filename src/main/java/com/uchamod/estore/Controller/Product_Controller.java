@@ -62,8 +62,8 @@ public class Product_Controller {
 
     //add product with image
     @PostMapping("/addProductWithImage")
-    public ResponseEntity<Product> addProductWithImage(@RequestPart Product product, @RequestPart MultipartFile imageFile){
-        return productService.addProductWithImage(product,imageFile);
+    public ResponseEntity<Product> addProductWithImage(@RequestPart Product product, @RequestPart MultipartFile imageFile,@RequestHeader("X-User-Id") String sellerId){
+        return productService.addProductWithImage(product,imageFile,UUID.fromString(sellerId));
     }
 
     //get product image

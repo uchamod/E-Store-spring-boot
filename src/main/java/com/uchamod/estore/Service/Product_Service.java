@@ -144,11 +144,12 @@ public class Product_Service {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
     //add new product with image
-    public ResponseEntity<Product> addProductWithImage(Product product, MultipartFile imageFile) {
+    public ResponseEntity<Product> addProductWithImage(Product product, MultipartFile imageFile,UUID sellerId) {
         try{
             if(product == null){
                 return ResponseEntity.badRequest().build();
             }
+            product.setSellerId(sellerId);
             if(imageFile.isEmpty()){
               Product newProduct =  productRepo.save(product);
               return new ResponseEntity<>(newProduct,HttpStatus.CREATED);
