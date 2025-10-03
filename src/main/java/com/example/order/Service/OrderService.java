@@ -4,6 +4,7 @@ import com.example.order.DTO.UserWrapper;
 import com.example.order.Feign.OrderFeignClient;
 import com.example.order.Feign.UserFeignClient;
 import com.example.order.Model.Order;
+import com.example.order.Model.OrderProductModel;
 import com.example.order.Repostory.OrderRepo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,7 @@ public class OrderService {
     private final OrderFeignClient orderFeignClient;
     private final EmailService emailService;
     private final UserFeignClient userFeignClient;
+    StringBuilder body = new StringBuilder();
     //place new order
     public ResponseEntity<Order> placeOrder(Order order) {
         try{
@@ -26,11 +28,17 @@ public class OrderService {
                 return ResponseEntity.badRequest().build();
             }
             Order order1= orderRepo.save(order);
-             //send acknowledgement
-             ResponseEntity<UserWrapper> userDTO= userFeignClient.getUserDTO(order.getCustomerId());
-            String subject = "New Order Received - Order #" + order.getOrderId().toString().substring(0, 8);
-            emailService.sendSimpleEmail(userDTO.getBody().getUserEmail(),subject,"email is recive succsussfuly");
-            return ResponseEntity.ok(order1);
+             //send acknowledgement mail to seller
+          List<OrderProductModel> orderProductModel= order.getOrderProductModelList();
+            ResponseEntity<UserWrapper> customerDTO= userFeignClient.getUserDTO(order.getCustomerId());
+          for(OrderProductModel productModel : orderProductModel){
+              ResponseEntity<UserWrapper> sellerDTO= userFeignClient.getUserDTO(productModel.getSellerId());
+              String subject = "New Order Received - Order #" + order.getOrderId().toString().substring(0, 8);
+              emailService.sendOrderNotificationToSeller(sellerDTO.getBody(),order,customerDTO.getBody(),productModel,body);
+             // emailService.sendSimpleEmail(userDTO.getBody().getUserEmail(),subject,"email is recive succsussfuly");
+          }
+
+          return ResponseEntity.ok(order1);
         }catch (Exception e){
             System.out.println("error while creating order"+e.getMessage());
             return ResponseEntity.internalServerError().build();
@@ -101,15 +109,13 @@ public class OrderService {
                 System.out.println(result.getBody());
             }
             orderRepo.save(order.get());
+            List<OrderProductModel> orderProductModel= order.get().getOrderProductModelList();
+            for(OrderProductModel productModel : orderProductModel){
+                ResponseEntity<UserWrapper> userDTO= userFeignClient.getUserDTO(productModel.getSellerId());
+                String subject = "New Order Received - Order #" + order.get().getOrderId().toString().substring(0, 8);
+                emailService.sendSimpleEmail(userDTO.getBody().getUserEmail(),subject,"email is recive succsussfuly");
+            }
 
-
-
-
-              /*
-
-               seller acknowledgement
-
-               */
             return ResponseEntity.ok("status updated "+status);
         }catch (Exception e){
             System.out.println("cannot get orders by seller id");
