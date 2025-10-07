@@ -18,8 +18,10 @@ public class Controller {
 
     private final OrderService orderService;
     @PostMapping("/placeOrder")
-    public ResponseEntity<Order> placeOrder(@RequestBody Order order){
-        return orderService.placeOrder(order);
+    public ResponseEntity<Order> placeOrder(
+                                            @RequestHeader("X-User-Id") String sellerId
+                                           ){
+        return orderService.placeOrder(UUID.fromString(sellerId));
     }
 
     @GetMapping("/getAllOrders")

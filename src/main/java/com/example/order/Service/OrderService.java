@@ -1,13 +1,15 @@
 package com.example.order.Service;
-import com.example.order.DTO.SellerDTO;
-import com.example.order.DTO.UserWrapper;
+import com.example.order.DTO.*;
 import com.example.order.Feign.OrderFeignClient;
 import com.example.order.Feign.UserFeignClient;
+import com.example.order.Helper.Helper;
 import com.example.order.Model.Order;
 import com.example.order.Model.OrderProductModel;
 import com.example.order.Repostory.OrderRepo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -20,27 +22,45 @@ public class OrderService {
     private final OrderFeignClient orderFeignClient;
     private final EmailService emailService;
     private final UserFeignClient userFeignClient;
+    private final Helper helper;
     StringBuilder body = new StringBuilder();
     //place new order
-    public ResponseEntity<Order> placeOrder(Order order) {
+    public ResponseEntity<Order> placeOrder(UUID uuid) {
         try{
-            if(order == null || order.getOrderProductModelList().isEmpty()){
+            if(uuid == null){
                 return ResponseEntity.badRequest().build();
             }
-            Order order1= orderRepo.save(order);
+            //get cart data
+            ResponseEntity<Cart> cartDTOEntity= orderFeignClient.getCartByUserId(uuid);
+            Cart cartDTO=cartDTOEntity.getBody();
+
+            //set order data
+            Order order=new Order();
+            order.setCustomerId(cartDTO.getCustomerId());
+            order.setTotalAmount(cartDTO.getTotalAmount());
+            List<OrderProductModel> orderProductModelList=new ArrayList<>();
+            for(CartProduct cartProductDTO : cartDTO.getCartProductList()){
+                orderProductModelList.add(new OrderProductModel(cartProductDTO.getProductId(),
+                        cartProductDTO.getSellerId(),
+                        cartProductDTO.getProductCount(),
+                        cartProductDTO.getProductItemPrice()));
+            }
+             order.setOrderProductModelList(orderProductModelList);
+             orderRepo.save(order);
+
              //send acknowledgement mail to seller
-          List<OrderProductModel> orderProductModel= order.getOrderProductModelList();
-            ResponseEntity<UserWrapper> customerDTO= userFeignClient.getUserDTO(order.getCustomerId());
-          for(OrderProductModel productModel : orderProductModel){
-              ResponseEntity<UserWrapper> sellerDTO= userFeignClient.getUserDTO(productModel.getSellerId());
-              String subject = "New Order Received - Order #" + order.getOrderId().toString().substring(0, 8);
-              emailService.sendOrderNotificationToSeller(sellerDTO.getBody(),order,customerDTO.getBody(),productModel,body);
+           List<EmailDTO> emailDTOList= helper.createEmailDTO(orderProductModelList);
+            ResponseEntity<UserWrapper> customerDTO= userFeignClient.getUserDTO(uuid);
+          for(EmailDTO emailDTO : emailDTOList){
+              ResponseEntity<UserWrapper> sellerDTO= userFeignClient.getUserDTO(emailDTO.getSellerId());
+
+              emailService.sendOrderNotificationToSeller(sellerDTO.getBody(),order,customerDTO.getBody(),emailDTO,body,"New Order Received - Order #");
              // emailService.sendSimpleEmail(userDTO.getBody().getUserEmail(),subject,"email is recive succsussfuly");
           }
 
-          return ResponseEntity.ok(order1);
+          return ResponseEntity.ok(order);
         }catch (Exception e){
-            System.out.println("error while creating order"+e.getMessage());
+            System.out.println("error while creating order "+e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -110,10 +130,12 @@ public class OrderService {
             }
             orderRepo.save(order.get());
             List<OrderProductModel> orderProductModel= order.get().getOrderProductModelList();
-            for(OrderProductModel productModel : orderProductModel){
-                ResponseEntity<UserWrapper> userDTO= userFeignClient.getUserDTO(productModel.getSellerId());
-                String subject = "New Order Received - Order #" + order.get().getOrderId().toString().substring(0, 8);
-                emailService.sendSimpleEmail(userDTO.getBody().getUserEmail(),subject,"email is recive succsussfuly");
+            List<EmailDTO> emailDTOList= helper.createEmailDTO(orderProductModel);
+            ResponseEntity<UserWrapper> customerDTO= userFeignClient.getUserDTO(order.get().getCustomerId());
+            for(EmailDTO emailDTO : emailDTOList){
+                ResponseEntity<UserWrapper> sellerDTO= userFeignClient.getUserDTO(emailDTO.getSellerId());
+                //String subject = "New Order Received - Order #" + order.get().getOrderId().toString().substring(0, 8);
+                emailService.sendOrderNotificationToSeller(sellerDTO.getBody(),order.get(),customerDTO.getBody(),emailDTO,body,"Payment Completed - Order #");
             }
 
             return ResponseEntity.ok("status updated "+status);

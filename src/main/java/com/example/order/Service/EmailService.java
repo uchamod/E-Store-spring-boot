@@ -1,6 +1,7 @@
 package com.example.order.Service;
 
 
+import com.example.order.DTO.EmailDTO;
 import com.example.order.DTO.UserWrapper;
 import com.example.order.Model.Order;
 import com.example.order.Model.OrderProductModel;
@@ -47,7 +48,7 @@ public class EmailService {
     //text email templete
     @Async
     public void sendOrderNotificationToSeller(UserWrapper seller, Order order, UserWrapper customer,
-                                              OrderProductModel sellerProducts, StringBuilder body) {
+                                              EmailDTO emailDTO, StringBuilder body, String subjectPrefix) {
         try {
            // String subject = "New Order Received - Order #" + order.getOrderId().toString().substring(0, 8);
 
@@ -71,22 +72,21 @@ public class EmailService {
             body.append("Your Products in This Order:\n");
             body.append("----------------------------\n");
 
-          //  double sellerTotal= sellerProducts.getProductCount()*sellerProducts.getProductItemPrice();
-             /*   double itemTotal = product.getProductItemPrice() * product.getProductCount();
-                sellerTotal += itemTotal;
-                body.append(String.format("Product ID: %s\n", product.getProductId()));
-                body.append(String.format("Quantity: %d\n", product.getProductCount()));
-                body.append(String.format("Unit Price: $%.2f\n", product.getProductItemPrice()));
-                body.append(String.format("Subtotal: $%.2f\n\n", itemTotal));
-            */
+            for(OrderProductModel orderProductModel : emailDTO.getOrderProductModelList()){
+                body.append(String.format("Product ID: %s\n", orderProductModel.getProductId()));
+                body.append(String.format("Quantity: %d\n", orderProductModel.getProductCount()));
+                body.append(String.format("Unit Price: $%.2f\n", orderProductModel.getProductItemPrice()));
+                body.append(String.format("Subtotal: $%.2f\n\n", orderProductModel.getProductCount()*orderProductModel.getProductItemPrice()));
+            }
 
-            body.append(String.format("Your Total: $%.2f\n\n", sellerProducts.getProductCount()*sellerProducts.getProductItemPrice()));
+
+            body.append(String.format("Your Total: $%.2f\n\n", emailDTO.getTotalAmount()));
             body.append("Please prepare these items for shipping.\n\n");
             body.append("Thank you for your business!\n\n");
             body.append("Best regards,\n");
             body.append("Your Marketplace Team");
 
-            sendSimpleEmail(seller.getUserEmail(), "New Order Received - Order #" + order.getOrderId(), body.toString());
+            sendSimpleEmail(seller.getUserEmail(), subjectPrefix + order.getOrderId(), body.toString());
 
         } catch (Exception e) {
             log.error("Failed to send order notification to seller: {}. Error: {}",

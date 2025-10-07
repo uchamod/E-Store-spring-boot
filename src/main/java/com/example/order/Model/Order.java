@@ -22,10 +22,16 @@ public class Order {
     private UUID orderId;
     private UUID customerId;
     private Double totalAmount;
-    private String orderStatus;
+    private String orderStatus="PENDING";
     @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "dd-MM-yyyy")
     private Date lastUpdate;
     @ElementCollection
     private List<OrderProductModel> orderProductModelList;
+
+    @PrePersist
+    @PreUpdate
+    protected void onUpdate() {
+        lastUpdate = new Date();
+    }
 }
 
