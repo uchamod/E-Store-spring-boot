@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -33,16 +34,21 @@ public class CartService {
                 return ResponseEntity.badRequest().build();
             }
 
-            List<CartProduct> cartProduct=new ArrayList<>();
-
             //get product price
             ResponseEntity<ProductData> productdata=  feignClient.getTotalAmount(productId);
-            CartProduct product=new CartProduct(productId,productdata.getBody().getSellerId(),1,false);
-            cartProduct.add(product);
-            Cart cart=new Cart();
+
+            //check if cart already exist
             Cart existingCart= cartRepo.findCartByCustomerId(userId);
+            //update product item count
             feignClient.updateAvailableCount(new CountUpdater(productId,1,false));
+            //for new cart
             if(existingCart == null){
+                List<CartProduct> cartProduct = new ArrayList<>(Arrays.asList(
+                        new CartProduct(productId,productdata.getBody().getSellerId(),
+                                1,productdata.getBody().getProductPrice(),
+                                false)
+                ));
+                Cart cart=new Cart();
                 cart.setCustomerId(userId);
                 cart.setCartProductList(cartProduct);
                 cart.setTotalAmount(productdata.getBody().getProductPrice());
@@ -50,7 +56,9 @@ public class CartService {
                 return ResponseEntity.ok("product is add to cart successfully");
             }
 
-            existingCart.getCartProductList().add(product);
+            existingCart.getCartProductList().add( new CartProduct(productId,productdata.getBody().getSellerId(),
+                    1,productdata.getBody().getProductPrice(),
+                    false));
             //update cart total
             existingCart.setTotalAmount(existingCart.getTotalAmount()+productdata.getBody().getProductPrice());
 
@@ -186,6 +194,23 @@ public class CartService {
             }
             return ResponseEntity.status(HttpStatus.OK).body("user product list is removed succsussfuly");
         }catch (Exception e){
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+    //get cart by userid
+    public ResponseEntity<Cart> getCartByUserId(UUID userId){
+        try{
+            if(userId==null){
+                return ResponseEntity.badRequest().build();
+            }
+            Cart userCart=cartRepo.findCartByCustomerId(userId);
+            System.out.println(userCart);
+            if(userCart.getCartProductList().isEmpty()){
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(userCart);
+        }catch (Exception e){
+            System.out.println("error while creating order"+e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
     }

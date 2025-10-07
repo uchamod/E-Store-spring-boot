@@ -19,12 +19,7 @@ public class Cart {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID cartId;
     private UUID customerId;
-
-
-
     private Double totalAmount;
     @ElementCollection
     private List<CartProduct> cartProductList;
-
-
 }

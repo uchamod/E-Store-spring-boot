@@ -18,6 +18,7 @@ public class CartProduct {
     private UUID productId;
     private UUID sellerId;
     private Integer productCount;
+    private Double productItemPrice;
     private Boolean isCheckout;
 
 }

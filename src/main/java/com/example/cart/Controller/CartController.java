@@ -1,5 +1,6 @@
 package com.example.cart.Controller;
 
+import com.example.cart.Model.Cart;
 import com.example.cart.Model.CartProduct;
 import com.example.cart.Model.ProductResponse;
 import com.example.cart.Service.CartService;
@@ -53,6 +54,10 @@ public class CartController {
     @DeleteMapping("/api/cart/checkoutFromCart/{userId}")
     ResponseEntity<String> checkoutFromCart(@PathVariable UUID userId){
         return cartService.checkoutFromCart(userId);
+    }
+    @GetMapping("/getCartByUserId/{userId}")
+    public ResponseEntity<Cart> getCartByUserId(@PathVariable UUID userId){
+        return cartService.getCartByUserId(userId);
     }
 
 }
